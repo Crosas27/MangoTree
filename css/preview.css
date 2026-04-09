@@ -4,6 +4,7 @@
   place-items: center;
   min-height: 18rem;
   padding: 1rem;
+  background: linear-gradient(180deg, rgba(248,250,252,0.9), rgba(241,245,249,0.9));
 }
 
 .state-grid {
@@ -13,9 +14,9 @@
 }
 
 .state-card {
-  border: 1px solid rgba(41, 64, 100, 0.5);
+  border: 1px solid rgba(148, 163, 184, 0.32);
   border-radius: 1.1rem;
-  background: rgba(8, 16, 28, 0.72);
+  background: rgba(255, 255, 255, 0.82);
   overflow: clip;
 }
 
@@ -25,8 +26,8 @@
   justify-content: space-between;
   gap: 0.75rem;
   padding: 0.8rem 1rem;
-  border-bottom: 1px solid rgba(41, 64, 100, 0.42);
-  color: var(--text-soft);
+  border-bottom: 1px solid rgba(148, 163, 184, 0.28);
+  color: #475569;
   font-size: 0.8rem;
   text-transform: capitalize;
 }
