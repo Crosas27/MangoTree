@@ -75,6 +75,13 @@ h3 {
   overflow: clip;
 }
 
+.panel--left {
+  position: sticky;
+  top: 0.75rem;
+  max-height: calc(100vh - 1.5rem);
+  overflow: auto;
+}
+
 .panel--center {
   min-height: 70vh;
 }
@@ -82,6 +89,10 @@ h3 {
 .panel-section {
   padding: var(--space-5);
   border-bottom: 1px solid rgba(60, 93, 147, 0.22);
+}
+
+.panel-section--compact {
+  padding-bottom: var(--space-4);
 }
 
 .panel-section:last-child {
@@ -99,6 +110,10 @@ h3 {
   justify-content: space-between;
   gap: var(--space-3);
   margin-bottom: var(--space-4);
+}
+
+.section-head--tight {
+  margin-bottom: var(--space-3);
 }
 
 .stack {
@@ -234,6 +249,42 @@ input[type="range"] {
 .segmented button.is-active {
   background: linear-gradient(180deg, rgba(94, 160, 255, 0.28), rgba(124, 58, 237, 0.22));
   color: var(--text);
+}
+
+
+.editor-tabs-wrap {
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  background: linear-gradient(180deg, rgba(17, 28, 49, 0.98), rgba(13, 22, 39, 0.95));
+  backdrop-filter: blur(10px);
+}
+
+.segmented--editor {
+  display: flex;
+  flex-wrap: nowrap;
+  width: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.segmented--editor::-webkit-scrollbar {
+  display: none;
+}
+
+.segmented--editor button {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.editor-panel {
+  display: none;
+}
+
+.editor-panel.is-active {
+  display: grid;
+  align-content: start;
+  gap: 0;
 }
 
 .accordion {
@@ -448,6 +499,16 @@ input[type="range"] {
 
   .app-grid {
     grid-template-columns: 1fr;
+  }
+
+  .panel--left {
+    position: static;
+    max-height: none;
+    overflow: clip;
+  }
+
+  .editor-tabs-wrap {
+    top: 0;
   }
 
   .panel-section--sticky {
