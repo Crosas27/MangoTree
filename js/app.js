@@ -57,6 +57,23 @@ const state = {
 
 let deferredInstallPrompt = null;
 
+
+function ensureConfigShape() {
+  if (!Array.isArray(state.config.customShadows)) {
+    state.config.customShadows = [];
+  }
+
+  if (state.activeElement === 'input' && !Array.isArray(state.config.inputs)) {
+    state.config.inputs = [{
+      label: state.config.label || 'Email',
+      inputType: state.config.inputType || 'email',
+      placeholder: state.config.placeholder || 'name@example.com',
+      helper: state.config.helper || 'We will never share your email.',
+      required: Boolean(state.config.required)
+    }];
+  }
+}
+
 function toast(message) {
   refs.toast.textContent = message;
   refs.toast.hidden = false;
@@ -84,12 +101,14 @@ function hydrate() {
   const cached = loadAppState();
   if (!cached) {
     state.config = applyStyleDna(configFromElement(state.activeElement), state.activeStyleDna, state.touchedFields, { force: true });
+    ensureConfigShape();
     return;
   }
   Object.assign(state, cached);
   state.activeConstraints = Array.isArray(cached.activeConstraints) ? cached.activeConstraints : [...DEFAULT_CONSTRAINTS];
   state.touchedFields = new Set();
   state.config = cached.config || configFromElement(state.activeElement);
+  ensureConfigShape();
 }
 
 function populateSelect(select, items) {
@@ -135,6 +154,7 @@ function loadElement(elementId, { resetTouched = true } = {}) {
   state.startMode = 'element';
   state.config = applyStyleDna(configFromElement(elementId), state.activeStyleDna, state.touchedFields, { force: true });
   if (resetTouched) state.touchedFields = new Set();
+  ensureConfigShape();
   refs.elementSelect.value = elementId;
   refs.startMode.value = state.startMode;
   rerender();
@@ -147,6 +167,7 @@ function loadIntent(intentId, { resetTouched = true } = {}) {
   state.activeElement = schema.id;
   state.config = applyStyleDna(config, state.activeStyleDna, state.touchedFields, { force: true });
   if (resetTouched) state.touchedFields = new Set();
+  ensureConfigShape();
   refs.intentSelect.value = intentId;
   refs.elementSelect.value = schema.id;
   refs.startMode.value = state.startMode;
@@ -155,6 +176,7 @@ function loadIntent(intentId, { resetTouched = true } = {}) {
 
 function getEffectiveState() {
   const schema = getElementSchema(state.activeElement);
+  ensureConfigShape();
   let effectiveConfig = applyStyleDna(deepClone(state.config), state.activeStyleDna, state.touchedFields);
   const constrained = applyConstraints(schema.id, effectiveConfig, state.activeConstraints);
   effectiveConfig = constrained.config;
@@ -431,6 +453,7 @@ function bindEvents() {
     state.activeStyleDna = preset.styleDna;
     state.activeConstraints = preset.constraints || [...DEFAULT_CONSTRAINTS];
     state.config = preset.config || configFromElement(preset.elementId);
+    ensureConfigShape();
     refs.elementSelect.value = state.activeElement;
     refs.styleDnaSelect.value = state.activeStyleDna;
     state.startMode = 'element';

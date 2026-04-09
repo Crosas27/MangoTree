@@ -247,7 +247,7 @@ export const INTENTS = {
     id: 'form-input',
     label: 'Form input',
     element: 'input',
-    config: { label: 'Email', placeholder: 'name@example.com', helper: 'We will never share it.', required: true }
+    config: { inputs: [{ label: 'Email', inputType: 'email', placeholder: 'name@example.com', helper: 'We will never share it.', required: true }] }
   },
   'status-badge': {
     id: 'status-badge',
@@ -297,6 +297,40 @@ function shadowFor(depth) {
   return '0 24px 60px rgba(15, 23, 42, 0.28)';
 }
 
+function joinShadowParts(parts = []) {
+  return parts.filter((part) => part && part !== 'none').join(', ') || 'none';
+}
+
+function customShadowFor(shadow = {}) {
+  const x = Number(shadow.x) || 0;
+  const y = Number(shadow.y) || 12;
+  const blur = Number(shadow.blur) || 24;
+  const spread = Number(shadow.spread) || 0;
+  const opacity = Math.min(1, Math.max(0, Number(shadow.opacity) || 0.16));
+  const inset = shadow.inset ? 'inset ' : '';
+  return `${inset}${x}px ${y}px ${blur}px ${spread}px rgba(15, 23, 42, ${opacity})`;
+}
+
+function shadowStack(config = {}) {
+  const parts = [];
+  const base = shadowFor(config.shadowDepth);
+  if (base !== 'none') parts.push(base);
+  const customShadows = Array.isArray(config.customShadows) ? config.customShadows : [];
+  customShadows.forEach((shadow) => parts.push(customShadowFor(shadow)));
+  return joinShadowParts(parts);
+}
+
+function normalizeInputItems(config = {}) {
+  if (Array.isArray(config.inputs) && config.inputs.length) return config.inputs;
+  return [{
+    label: config.label || 'Email',
+    inputType: config.inputType || 'email',
+    placeholder: config.placeholder || 'name@example.com',
+    helper: config.helper || 'We will never share your email.',
+    required: Boolean(config.required)
+  }];
+}
+
 function transitionMs(config) {
   return `${Number(config.transitionSpeed) || 160}ms`;
 }
@@ -324,14 +358,14 @@ function buttonCss(prefix, config, dna, constraints) {
   const pxv = px(config.paddingX);
   const fontSize = px(config.fontSize);
   const borderWidth = px(config.borderWidth);
-  const shadow = shadowFor(config.shadowDepth);
+  const shadow = shadowStack(config);
   const hoverTranslate = `${Math.max(0, Number(config.hoverLift) || 0)}px`;
   const activeTranslate = `${Math.max(0, Number(config.pressDepth) || 0)}px`;
   const glassBlock = config.glass ? `
   backdrop-filter: blur(${px(config.blur || 12)});
   -webkit-backdrop-filter: blur(${px(config.blur || 12)});` : '';
   const glowBlock = config.glow ? `
-  box-shadow: ${shadow}, 0 0 0 1px rgba(255,255,255,0.1), 0 0 26px color-mix(in srgb, var(--ui-accent) 35%, transparent);` : `
+  box-shadow: ${joinShadowParts([shadow, '0 0 0 1px rgba(255,255,255,0.1)', '0 0 26px color-mix(in srgb, var(--ui-accent) 35%, transparent)'])};` : `
   box-shadow: ${shadow};`;
   const backgroundPrimary = config.gradient
     ? 'linear-gradient(135deg, var(--ui-accent), var(--ui-accent-alt))'
@@ -457,7 +491,7 @@ function cardCss(prefix, config, dna, constraints) {
   border:${borderWidth} solid var(--ui-border);
   background:${config.glass ? 'var(--ui-surface-tint)' : bg};
   color:var(--ui-text);
-  box-shadow:${shadowFor(config.shadowDepth)};
+  box-shadow:${shadowStack(config)};
   transition:
     transform ${transitionMs(config)} ease,
     box-shadow ${transitionMs(config)} ease,
@@ -491,11 +525,11 @@ function cardCss(prefix, config, dna, constraints) {
 .${prefix}-card:hover,
 [data-preview-state="hover"] .${prefix}-card{
   transform:translateY(calc(${px(Math.max(0, Number(config.hoverLift) || 0))} * -1));
-  box-shadow:${shadowFor(Math.min(4, Number(config.shadowDepth) + 1))};
+  box-shadow:${shadowStack({ ...config, shadowDepth: Math.min(4, Number(config.shadowDepth) + 1) })};
 }
 [data-preview-state="selected"] .${prefix}-card{
   border-color:var(--ui-accent);
-  box-shadow:${shadowFor(Math.min(4, Number(config.shadowDepth) + 1))}, 0 0 0 3px color-mix(in srgb, var(--ui-accent) 20%, transparent);
+  box-shadow:${joinShadowParts([shadowStack({ ...config, shadowDepth: Math.min(4, Number(config.shadowDepth) + 1) }), '0 0 0 3px color-mix(in srgb, var(--ui-accent) 20%, transparent)'])};
 }
 ${darkMode}`;
 }
@@ -524,8 +558,13 @@ function inputCss(prefix, config, dna, constraints) {
   }
 }` : '';
   return `${buildThemeVars(prefix, dna)}
-.${prefix}-field{
+.${prefix}-fieldset{
   width:min(100%, ${px(config.width)});
+  display:grid;
+  gap:0.9rem;
+}
+.${prefix}-field{
+  width:100%;
   display:grid;
   gap:0.5rem;
   font-family:var(--ui-font);
@@ -544,14 +583,14 @@ function inputCss(prefix, config, dna, constraints) {
   background:var(--ui-surface);
   color:var(--ui-text);
   font-size:${px(config.fontSize)};
-  box-shadow:${shadowFor(config.shadowDepth)};
+  box-shadow:${shadowStack(config)};
   transition:border-color ${transitionMs(config)} ease, box-shadow ${transitionMs(config)} ease, transform ${transitionMs(config)} ease;
 }
 .${prefix}-field__control:focus-visible,
 [data-preview-state="focus"] .${prefix}-field__control{
   outline:none;
   border-color:var(--ui-accent);
-  box-shadow:${shadowFor(config.shadowDepth)}, 0 0 0 4px color-mix(in srgb, var(--ui-accent) 20%, transparent);
+  box-shadow:${joinShadowParts([shadowStack(config), '0 0 0 4px color-mix(in srgb, var(--ui-accent) 20%, transparent)'])};
 }
 [data-preview-state="disabled"] .${prefix}-field__control{
   opacity:0.62;
@@ -559,11 +598,11 @@ function inputCss(prefix, config, dna, constraints) {
 }
 [data-preview-state="invalid"] .${prefix}-field__control{
   border-color:var(--ui-danger);
-  box-shadow:${shadowFor(config.shadowDepth)}, 0 0 0 4px color-mix(in srgb, var(--ui-danger) 16%, transparent);
+  box-shadow:${joinShadowParts([shadowStack(config), '0 0 0 4px color-mix(in srgb, var(--ui-danger) 16%, transparent)'])};
 }
 [data-preview-state="success"] .${prefix}-field__control{
   border-color:var(--ui-success);
-  box-shadow:${shadowFor(config.shadowDepth)}, 0 0 0 4px color-mix(in srgb, var(--ui-success) 16%, transparent);
+  box-shadow:${joinShadowParts([shadowStack(config), '0 0 0 4px color-mix(in srgb, var(--ui-success) 16%, transparent)'])};
 }
 .${prefix}-field__helper{
   font-size:0.8rem;
@@ -582,17 +621,22 @@ function inputHtml(config) {
   const prefix = config.classPrefix;
   const state = config.previewState || 'default';
   const disabled = state === 'disabled' ? ' disabled' : '';
-  const helperText = state === 'invalid'
-    ? config.invalidMessage
-    : state === 'success'
-      ? config.successMessage
-      : config.helper;
+  const items = normalizeInputItems(config);
   return `<div class="${prefix}-preview-shell ${prefix}-theme" data-center="true">
-  <label class="${prefix}-field">
-    <span class="${prefix}-field__label">${escapeHtml(config.label)}${config.required ? ' *' : ''}</span>
-    <input class="${prefix}-field__control" type="${escapeHtml(config.inputType)}" placeholder="${escapeHtml(config.placeholder)}"${disabled}>
-    <span class="${prefix}-field__helper">${escapeHtml(helperText)}</span>
-  </label>
+  <div class="${prefix}-fieldset">
+    ${items.map((item) => {
+      const helperText = state === 'invalid'
+        ? config.invalidMessage
+        : state === 'success'
+          ? config.successMessage
+          : item.helper;
+      return `<label class="${prefix}-field">
+      <span class="${prefix}-field__label">${escapeHtml(item.label)}${item.required ? ' *' : ''}</span>
+      <input class="${prefix}-field__control" type="${escapeHtml(item.inputType)}" placeholder="${escapeHtml(item.placeholder)}"${disabled}>
+      <span class="${prefix}-field__helper">${escapeHtml(helperText)}</span>
+    </label>`;
+    }).join('')}
+  </div>
 </div>`;
 }
 
@@ -657,7 +701,7 @@ function modalCss(prefix, config, dna, constraints) {
   border:${px(config.borderWidth)} solid var(--ui-border);
   background:${config.glass ? 'var(--ui-surface-tint)' : 'var(--ui-surface)'};
   color:var(--ui-text);
-  box-shadow:${shadowFor(config.shadowDepth)};
+  box-shadow:${shadowStack(config)};
   ${config.glass ? `backdrop-filter: blur(${px(config.blur || 12)}); -webkit-backdrop-filter: blur(${px(config.blur || 12)});` : ''}
 }
 .${prefix}-modal__title{
@@ -793,7 +837,7 @@ function badgeCss(prefix, config, dna, constraints) {
   background:${config.outlined ? 'transparent' : (config.gradient ? `linear-gradient(135deg, ${bg}, color-mix(in srgb, ${bg} 70%, white))` : bg)};
   color:${fg};
   font:700 ${px(config.fontSize)} / 1 var(--ui-font);
-  box-shadow:${shadowFor(config.shadowDepth)};
+  box-shadow:${shadowStack(config)};
 }
 [data-preview-state="subtle"] .${prefix}-badge{
   box-shadow:none;
@@ -853,6 +897,7 @@ export const ELEMENTS = {
       gradient: false,
       glass: false,
       glow: false,
+      customShadows: [],
       blur: 12,
       hoverLift: 2,
       pressDepth: 1,
@@ -874,6 +919,23 @@ export const ELEMENTS = {
       { group: 'core', type: 'range', name: 'fontSize', label: 'Font size', min: 12, max: 20, step: 1, unit: 'px' },
 
       { group: 'effects', type: 'range', name: 'shadowDepth', label: 'Shadow depth', min: 0, max: 4, step: 1 },
+      {
+        group: 'effects',
+        type: 'collection',
+        name: 'customShadows',
+        label: 'Custom shadows',
+        itemLabel: 'Shadow',
+        addLabel: 'Add new shadow',
+        defaultItem: { x: 0, y: 14, blur: 28, spread: 0, opacity: 0.18, inset: false },
+        itemFields: [
+          { type: 'number', name: 'x', label: 'Offset X' },
+          { type: 'number', name: 'y', label: 'Offset Y' },
+          { type: 'number', name: 'blur', label: 'Blur' },
+          { type: 'number', name: 'spread', label: 'Spread' },
+          { type: 'number', name: 'opacity', label: 'Opacity', min: 0, max: 1, step: 0.01 },
+          { type: 'checkbox', name: 'inset', label: 'Inset shadow' }
+        ]
+      },
       { group: 'effects', type: 'checkbox', name: 'gradient', label: 'Gradient' },
       { group: 'effects', type: 'checkbox', name: 'glass', label: 'Glass' },
       { group: 'effects', type: 'checkbox', name: 'glow', label: 'Glow' },
@@ -922,6 +984,7 @@ export const ELEMENTS = {
       glass: false,
       blur: 12,
       glow: false,
+      customShadows: [],
       hoverLift: 3,
       transitionSpeed: 180,
       classPrefix: 'uiforge',
@@ -938,6 +1001,23 @@ export const ELEMENTS = {
       { group: 'core', type: 'range', name: 'padding', label: 'Padding', min: 10, max: 32, step: 1, unit: 'px' },
 
       { group: 'effects', type: 'range', name: 'shadowDepth', label: 'Shadow depth', min: 0, max: 4, step: 1 },
+      {
+        group: 'effects',
+        type: 'collection',
+        name: 'customShadows',
+        label: 'Custom shadows',
+        itemLabel: 'Shadow',
+        addLabel: 'Add new shadow',
+        defaultItem: { x: 0, y: 14, blur: 28, spread: 0, opacity: 0.18, inset: false },
+        itemFields: [
+          { type: 'number', name: 'x', label: 'Offset X' },
+          { type: 'number', name: 'y', label: 'Offset Y' },
+          { type: 'number', name: 'blur', label: 'Blur' },
+          { type: 'number', name: 'spread', label: 'Spread' },
+          { type: 'number', name: 'opacity', label: 'Opacity', min: 0, max: 1, step: 0.01 },
+          { type: 'checkbox', name: 'inset', label: 'Inset shadow' }
+        ]
+      },
       { group: 'effects', type: 'checkbox', name: 'gradient', label: 'Gradient fill' },
       { group: 'effects', type: 'checkbox', name: 'glass', label: 'Glass' },
       { group: 'effects', type: 'range', name: 'blur', label: 'Blur', min: 0, max: 24, step: 1, unit: 'px' },
@@ -966,13 +1046,15 @@ export const ELEMENTS = {
     label: 'Input',
     intents: ['form-input'],
     defaults: {
-      label: 'Email',
-      placeholder: 'name@example.com',
-      helper: 'We will never share your email.',
+      inputs: [{
+        label: 'Email',
+        inputType: 'email',
+        placeholder: 'name@example.com',
+        helper: 'We will never share your email.',
+        required: false
+      }],
       invalidMessage: 'Enter a valid value.',
       successMessage: 'Looks good.',
-      inputType: 'email',
-      required: false,
       width: 340,
       radius: 14,
       paddingX: 14,
@@ -980,16 +1062,35 @@ export const ELEMENTS = {
       fontSize: 15,
       borderWidth: 1,
       shadowDepth: 0,
+      customShadows: [],
       transitionSpeed: 150,
       classPrefix: 'uiforge',
       exportCssVars: true
     },
     fields: [
-      { group: 'core', type: 'text', name: 'label', label: 'Label' },
-      { group: 'core', type: 'select', name: 'inputType', label: 'Input type', options: ['text', 'email', 'password', 'search', 'tel'] },
-      { group: 'core', type: 'text', name: 'placeholder', label: 'Placeholder' },
-      { group: 'core', type: 'text', name: 'helper', label: 'Helper text' },
-      { group: 'core', type: 'checkbox', name: 'required', label: 'Required' },
+      {
+        group: 'core',
+        type: 'collection',
+        name: 'inputs',
+        label: 'Input fields',
+        itemLabel: 'Input',
+        addLabel: 'Add new input',
+        minItems: 1,
+        defaultItem: {
+          label: 'Additional field',
+          inputType: 'text',
+          placeholder: 'Type here',
+          helper: 'Optional helper text',
+          required: false
+        },
+        itemFields: [
+          { type: 'text', name: 'label', label: 'Label' },
+          { type: 'select', name: 'inputType', label: 'Input type', options: ['text', 'email', 'password', 'search', 'tel', 'url', 'number'] },
+          { type: 'text', name: 'placeholder', label: 'Placeholder' },
+          { type: 'text', name: 'helper', label: 'Helper text' },
+          { type: 'checkbox', name: 'required', label: 'Required' }
+        ]
+      },
       { group: 'core', type: 'range', name: 'width', label: 'Field width', min: 220, max: 540, step: 2, unit: 'px' },
       { group: 'core', type: 'range', name: 'radius', label: 'Radius', min: 0, max: 28, step: 1, unit: 'px' },
 
@@ -997,6 +1098,23 @@ export const ELEMENTS = {
       { group: 'effects', type: 'range', name: 'paddingY', label: 'Vertical padding', min: 8, max: 20, step: 1, unit: 'px' },
       { group: 'effects', type: 'range', name: 'fontSize', label: 'Font size', min: 12, max: 20, step: 1, unit: 'px' },
       { group: 'effects', type: 'range', name: 'shadowDepth', label: 'Shadow depth', min: 0, max: 4, step: 1 },
+      {
+        group: 'effects',
+        type: 'collection',
+        name: 'customShadows',
+        label: 'Custom shadows',
+        itemLabel: 'Shadow',
+        addLabel: 'Add new shadow',
+        defaultItem: { x: 0, y: 14, blur: 28, spread: 0, opacity: 0.18, inset: false },
+        itemFields: [
+          { type: 'number', name: 'x', label: 'Offset X' },
+          { type: 'number', name: 'y', label: 'Offset Y' },
+          { type: 'number', name: 'blur', label: 'Blur' },
+          { type: 'number', name: 'spread', label: 'Spread' },
+          { type: 'number', name: 'opacity', label: 'Opacity', min: 0, max: 1, step: 0.01 },
+          { type: 'checkbox', name: 'inset', label: 'Inset shadow' }
+        ]
+      },
       { group: 'effects', type: 'range', name: 'transitionSpeed', label: 'Transition speed', min: 0, max: 400, step: 10, unit: 'ms' },
 
       { group: 'expert', type: 'text', name: 'invalidMessage', label: 'Invalid message' },
@@ -1035,6 +1153,7 @@ export const ELEMENTS = {
       titleSize: 24,
       borderWidth: 1,
       shadowDepth: 3,
+      customShadows: [],
       glass: false,
       blur: 12,
       overlayTint: 0.58,
@@ -1055,6 +1174,23 @@ export const ELEMENTS = {
       { group: 'effects', type: 'range', name: 'padding', label: 'Padding', min: 12, max: 32, step: 1, unit: 'px' },
       { group: 'effects', type: 'range', name: 'titleSize', label: 'Title size', min: 18, max: 34, step: 1, unit: 'px' },
       { group: 'effects', type: 'range', name: 'shadowDepth', label: 'Shadow depth', min: 0, max: 4, step: 1 },
+      {
+        group: 'effects',
+        type: 'collection',
+        name: 'customShadows',
+        label: 'Custom shadows',
+        itemLabel: 'Shadow',
+        addLabel: 'Add new shadow',
+        defaultItem: { x: 0, y: 14, blur: 28, spread: 0, opacity: 0.18, inset: false },
+        itemFields: [
+          { type: 'number', name: 'x', label: 'Offset X' },
+          { type: 'number', name: 'y', label: 'Offset Y' },
+          { type: 'number', name: 'blur', label: 'Blur' },
+          { type: 'number', name: 'spread', label: 'Spread' },
+          { type: 'number', name: 'opacity', label: 'Opacity', min: 0, max: 1, step: 0.01 },
+          { type: 'checkbox', name: 'inset', label: 'Inset shadow' }
+        ]
+      },
       { group: 'effects', type: 'checkbox', name: 'glass', label: 'Glass panel' },
       { group: 'effects', type: 'range', name: 'blur', label: 'Blur', min: 0, max: 24, step: 1, unit: 'px' },
       { group: 'effects', type: 'range', name: 'overlayTint', label: 'Overlay tint', min: 0.2, max: 0.9, step: 0.02 },
@@ -1090,6 +1226,7 @@ export const ELEMENTS = {
       fontSize: 13,
       borderWidth: 1,
       shadowDepth: 0,
+      customShadows: [],
       gradient: false,
       classPrefix: 'uiforge',
       exportCssVars: true
