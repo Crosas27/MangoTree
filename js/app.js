@@ -195,6 +195,41 @@ function renderCodeTabs() {
   refs.jsOutput.classList.toggle('is-active', state.codeTab === 'js');
 }
 
+
+
+function captureFormFocus() {
+  const active = document.activeElement;
+  if (!active) return null;
+  if (!(refs.coreForm.contains(active) || refs.effectsForm.contains(active) || refs.expertForm.contains(active))) {
+    return null;
+  }
+  return {
+    name: active.name,
+    tagName: active.tagName,
+    type: active.type,
+    selectionStart: typeof active.selectionStart === 'number' ? active.selectionStart : null,
+    selectionEnd: typeof active.selectionEnd === 'number' ? active.selectionEnd : null
+  };
+}
+
+function restoreFormFocus(snapshot) {
+  if (!snapshot?.name) return;
+  const selector = `[name="${CSS.escape(snapshot.name)}"]`;
+  const next = refs.coreForm.querySelector(selector)
+    || refs.effectsForm.querySelector(selector)
+    || refs.expertForm.querySelector(selector);
+  if (!next) return;
+  if (typeof next.focus === 'function') next.focus({ preventScroll: true });
+  if (
+    typeof next.setSelectionRange === 'function'
+    && snapshot.selectionStart !== null
+    && snapshot.selectionEnd !== null
+    && (next.tagName === 'TEXTAREA' || next.type === 'text' || next.type === 'search' || next.type === 'url' || next.type === 'tel' || next.type === 'password')
+  ) {
+    next.setSelectionRange(snapshot.selectionStart, snapshot.selectionEnd);
+  }
+}
+
 function renderViewportButtons() {
   document.querySelectorAll('[data-viewport]').forEach((button) => {
     button.classList.toggle('is-active', button.dataset.viewport === state.viewport);
@@ -213,7 +248,7 @@ function rerenderForms(schema, values) {
   const onChange = (field, nextValue) => {
     state.config[field.name] = nextValue;
     state.touchedFields.add(field.name);
-    rerender();
+    rerender({ preserveFormFocus: true });
   };
   renderForm(refs.coreForm, groups.core, values, onChange);
   renderForm(refs.effectsForm, groups.effects, values, onChange);
@@ -275,7 +310,9 @@ function syncVisibility() {
   refs.intentField.hidden = state.startMode !== 'intent';
 }
 
-function rerender() {
+function rerender({ preserveFormFocus = false } = {}) {
+  const focusSnapshot = preserveFormFocus ? captureFormFocus() : null;
+
   syncVisibility();
   renderConstraintList();
   renderViewportButtons();
@@ -285,6 +322,7 @@ function rerender() {
   const { schema, dna, config, warnings } = getEffectiveState();
   refs.buildSummary.textContent = `${schema.label} · ${dna.label}`;
   rerenderForms(schema, config);
+  if (focusSnapshot) restoreFormFocus(focusSnapshot);
 
   const outputs = generateOutputs(schema, config, dna, state.activeConstraints);
   state.outputs = outputs;
