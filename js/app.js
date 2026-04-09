@@ -38,7 +38,9 @@ const refs = {
   toast: document.querySelector('#toast'),
   installBtn: document.querySelector('#installBtn'),
   elementField: document.querySelector('#elementField'),
-  intentField: document.querySelector('#intentField')
+  intentField: document.querySelector('#intentField'),
+  editorPanels: document.querySelectorAll('[data-editor-panel]'),
+  editorTabs: document.querySelectorAll('[data-editor-tab]')
 };
 
 const state = {
@@ -51,6 +53,7 @@ const state = {
   previewMode: 'single',
   viewport: 'mobile',
   codeTab: 'html',
+  activeEditorTab: 'build',
   touchedFields: new Set(),
   outputs: { html: '', css: '', js: '' }
 };
@@ -93,7 +96,8 @@ function persist() {
     config: state.config,
     previewMode: state.previewMode,
     viewport: state.viewport,
-    codeTab: state.codeTab
+    codeTab: state.codeTab,
+    activeEditorTab: state.activeEditorTab
   });
 }
 
@@ -106,6 +110,7 @@ function hydrate() {
   }
   Object.assign(state, cached);
   state.activeConstraints = Array.isArray(cached.activeConstraints) ? cached.activeConstraints : [...DEFAULT_CONSTRAINTS];
+  state.activeEditorTab = cached.activeEditorTab || 'build';
   state.touchedFields = new Set();
   state.config = cached.config || configFromElement(state.activeElement);
   ensureConfigShape();
@@ -218,6 +223,17 @@ function renderCodeTabs() {
 }
 
 
+function renderEditorTabs() {
+  refs.editorTabs.forEach((button) => {
+    button.classList.toggle('is-active', button.dataset.editorTab === state.activeEditorTab);
+  });
+
+  refs.editorPanels.forEach((panel) => {
+    const isActive = panel.dataset.editorPanel === state.activeEditorTab;
+    panel.classList.toggle('is-active', isActive);
+    panel.hidden = !isActive;
+  });
+}
 
 function captureFormFocus() {
   const active = document.activeElement;
@@ -340,6 +356,7 @@ function rerender({ preserveFormFocus = false, skipForms = false } = {}) {
   renderViewportButtons();
   renderPreviewButtons();
   renderCodeTabs();
+  renderEditorTabs();
 
   const { schema, dna, config, warnings } = getEffectiveState();
   refs.buildSummary.textContent = `${schema.label} · ${dna.label}`;
@@ -379,6 +396,14 @@ function bindEvents() {
     state.activeStyleDna = refs.styleDnaSelect.value;
     state.config = applyStyleDna(state.config, state.activeStyleDna, state.touchedFields, { force: true });
     rerender();
+  });
+
+  refs.editorTabs.forEach((button) => {
+    button.addEventListener('click', () => {
+      state.activeEditorTab = button.dataset.editorTab;
+      renderEditorTabs();
+      persist();
+    });
   });
 
   document.querySelectorAll('[data-preview-mode]').forEach((button) => {
@@ -457,6 +482,7 @@ function bindEvents() {
     refs.elementSelect.value = state.activeElement;
     refs.styleDnaSelect.value = state.activeStyleDna;
     state.startMode = 'element';
+    state.activeEditorTab = 'build';
     refs.startMode.value = 'element';
     rerender();
     toast('Preset loaded');
