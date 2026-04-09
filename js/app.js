@@ -248,7 +248,7 @@ function rerenderForms(schema, values) {
   const onChange = (field, nextValue) => {
     state.config[field.name] = nextValue;
     state.touchedFields.add(field.name);
-    rerender({ preserveFormFocus: true });
+    rerender({ skipForms: true });
   };
   renderForm(refs.coreForm, groups.core, values, onChange);
   renderForm(refs.effectsForm, groups.effects, values, onChange);
@@ -310,7 +310,7 @@ function syncVisibility() {
   refs.intentField.hidden = state.startMode !== 'intent';
 }
 
-function rerender({ preserveFormFocus = false } = {}) {
+function rerender({ preserveFormFocus = false, skipForms = false } = {}) {
   const focusSnapshot = preserveFormFocus ? captureFormFocus() : null;
 
   syncVisibility();
@@ -321,7 +321,9 @@ function rerender({ preserveFormFocus = false } = {}) {
 
   const { schema, dna, config, warnings } = getEffectiveState();
   refs.buildSummary.textContent = `${schema.label} · ${dna.label}`;
-  rerenderForms(schema, config);
+  if (!skipForms) {
+    rerenderForms(schema, config);
+  }
   if (focusSnapshot) restoreFormFocus(focusSnapshot);
 
   const outputs = generateOutputs(schema, config, dna, state.activeConstraints);
