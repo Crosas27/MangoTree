@@ -30,9 +30,24 @@
 
     <main class="app-grid">
       <aside class="panel panel--left">
-        <section class="panel-section">
+        <div class="editor-tabs-wrap panel-section panel-section--compact">
+          <div class="section-head section-head--tight">
+            <h2>Builder</h2>
+            <span class="muted">Tabbed editor</span>
+          </div>
+          <div class="segmented segmented--editor" role="tablist" aria-label="Editor sections">
+            <button type="button" class="is-active" data-editor-tab="build">Build</button>
+            <button type="button" data-editor-tab="constraints">Constraints</button>
+            <button type="button" data-editor-tab="core">Core</button>
+            <button type="button" data-editor-tab="effects">Effects</button>
+            <button type="button" data-editor-tab="expert">Expert</button>
+            <button type="button" data-editor-tab="presets">Presets</button>
+          </div>
+        </div>
+
+        <section class="panel-section editor-panel is-active" data-editor-panel="build">
           <div class="section-head">
-            <h2>Start</h2>
+            <h2>Build</h2>
             <span class="chip">V1 scaffold</span>
           </div>
 
@@ -60,7 +75,7 @@
           </div>
         </section>
 
-        <section class="panel-section">
+        <section class="panel-section editor-panel" data-editor-panel="constraints">
           <div class="section-head">
             <h2>Constraints</h2>
             <span class="muted">Constraint-first</span>
@@ -68,29 +83,31 @@
           <div id="constraintsList" class="stack"></div>
         </section>
 
-        <section class="panel-section">
+        <section class="panel-section editor-panel" data-editor-panel="core">
           <div class="section-head">
-            <h2>Controls</h2>
+            <h2>Core</h2>
             <span class="muted">Schema-driven</span>
           </div>
-
-          <details class="accordion" open>
-            <summary>Core</summary>
-            <form id="coreForm" class="stack"></form>
-          </details>
-
-          <details class="accordion">
-            <summary>Effects</summary>
-            <form id="effectsForm" class="stack"></form>
-          </details>
-
-          <details class="accordion">
-            <summary>Expert</summary>
-            <form id="expertForm" class="stack"></form>
-          </details>
+          <form id="coreForm" class="stack"></form>
         </section>
 
-        <section class="panel-section">
+        <section class="panel-section editor-panel" data-editor-panel="effects">
+          <div class="section-head">
+            <h2>Effects</h2>
+            <span class="muted">Shadows, motion, polish</span>
+          </div>
+          <form id="effectsForm" class="stack"></form>
+        </section>
+
+        <section class="panel-section editor-panel" data-editor-panel="expert">
+          <div class="section-head">
+            <h2>Expert</h2>
+            <span class="muted">Advanced output</span>
+          </div>
+          <form id="expertForm" class="stack"></form>
+        </section>
+
+        <section class="panel-section editor-panel" data-editor-panel="presets">
           <div class="section-head">
             <h2>Presets</h2>
             <span class="muted">Local</span>
